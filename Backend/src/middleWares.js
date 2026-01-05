@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken')
 
 const isAuthenticated = (req,res,next) => {
-    const authHeaders = req.headers["authorization"]
+    const authHeader = req.headers.authorization
     let jwtToken;
-    if(authHeaders !== undefined){
-        jwtToken = authHeaders.split(" ")[1]
+    if(authHeader !== undefined){
+        jwtToken = authHeader.split(" ")[1]
     }
     if(jwtToken === undefined){
         res.status(401).send('Please Login To Continue !')
@@ -20,3 +20,5 @@ const isAuthenticated = (req,res,next) => {
         })
         }
     }
+
+    module.exports = {isAuthenticated}
