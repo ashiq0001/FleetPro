@@ -267,4 +267,95 @@ app.delete('/drivers/:driverId',isAuthenticated,async(request,response) => {
     }
 })
 
-//trips api
+//trips api 
+app.post('/trips', isAuthenticated, async (req, res) => {
+  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense } = req.body;
+
+  const postTripQuery = `
+    INSERT INTO trips (date, source, destination, vendor_name, driver_id, vehicle_id, amount, advance, expense)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  try {
+    const result = await db.run(postTripQuery, [
+      date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense
+    ]);
+    res.status(200).send(`Trip Added Successfully with ID ${result.lastID}`);
+  } catch (error) {
+    console.error('Cannot add Trip', error);
+    res.status(500).send({ error: 'Cannot Add Trip' });
+  }
+});
+
+app.get('/trips', isAuthenticated, async (req, res) => {
+  const getTripsQuery = ` SELECT 
+      trips.id,
+      trips.date,
+      trips.source,
+      trips.destination,
+      trips.vendor_name,
+      trips.amount,
+      trips.advance,
+      trips.expense,
+      drivers.name AS driver_name,
+      vehicles.vehicle_number AS vehicle_number
+    FROM trips
+    LEFT JOIN drivers ON trips.driver_id = drivers.id
+    LEFT JOIN vehicles ON trips.vehicle_id = vehicles.id`;
+
+  const toCamelCaseTrip = (obj) => ({
+    id: obj.id,
+    date: obj.date,
+    source: obj.source,
+    destination: obj.destination,
+    vendorName: obj.vendor_name,
+    driverName: obj.driver_name,
+    vehicleNumber: obj.vehicle_number,
+    amount: obj.amount,
+    advance: obj.advance,
+    expense: obj.expense,
+    profit: obj.amount - obj.advance - obj.expense
+  });
+
+  try {
+    const getTrips = await db.all(getTripsQuery);
+    const trips = getTrips.map(toCamelCaseTrip);
+    res.status(200).send(trips);
+  } catch (error) {
+    console.error('Loading Trips Failed', error);
+    res.status(500).send({ error: 'Loading Trips Failed' });
+  }
+});
+
+app.put('/trips/:tripId', isAuthenticated, async (req, res) => {
+  const { tripId } = req.params;
+  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense } = req.body;
+
+  const updateTripQuery = `
+    UPDATE trips
+    SET date = ?, source = ?, destination = ?, vendor_name = ?,
+        driver_id = ?, vehicle_id = ?, amount = ?, advance = ?, expense = ?
+    WHERE id = ?`;
+
+  try {
+    await db.run(updateTripQuery, [
+      date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense, tripId
+    ]);
+    res.status(200).send(`Trip ${tripId} updated successfully`);
+  } catch (error) {
+    console.log(`Cannot Update Trip ${tripId}`, error);
+    res.status(500).send({ error: `Cannot Update Trip ${tripId}` });
+  }
+});
+
+app.delete('/trips/:tripId', isAuthenticated, async (req, res) => {
+  const { tripId } = req.params;
+  const deleteTripQuery = `DELETE FROM trips WHERE id = ?`;
+
+  try {
+    await db.run(deleteTripQuery, [tripId]);
+    res.status(200).send(`Trip ${tripId} deleted Successfully`);
+  } catch (error) {
+    console.error(`Cannot Delete Trip ${tripId}`, error);
+    res.status(500).send({ error: `Cannot Delete Trip ${tripId}` });
+  }
+});
