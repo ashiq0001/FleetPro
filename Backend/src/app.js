@@ -5,8 +5,6 @@ const sqlite3 = require('sqlite3')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const {isAuthenticated} = require('./middleWares.js')
-const { error } = require('console')
-const { request, get } = require('http')
 
 const connectionPath = path.join(__dirname,'../database/fleetpro.db')
 
@@ -140,7 +138,7 @@ app.get('/vehicles',isAuthenticated, async(request,response) => {
 
   try {
     const getVehicles = await db.all(getVehiclesQuery);
-    const vehicles = [getVehicles].map(toCamelCaseVehicle);
+    const vehicles = getVehicles.map(toCamelCaseVehicle);
     response.status(200).send(vehicles);
   } catch (error) {
     console.error("Error fetching vehicles:", error);
@@ -183,9 +181,8 @@ app.get('/vehicles/:vehicleId/',isAuthenticated,async(request,response) => {
 app.get('/drivers',isAuthenticated,async(request,response) => {
     const getDriversQuery = `
     SELECT *
-    FROM drivers
-    JOIN vehicles 
-    ON drivers.id = vehicles.driver_id`
+FROM drivers
+LEFT JOIN vehicles ON drivers.id = vehicles.driver_id`
      
     const toCamelCaseDriver = (obj) => ({
   id: obj.id,
@@ -226,7 +223,7 @@ app.post('/drivers',isAuthenticated,async(request,response) => {
     }
 })
 
-app.put('/drivers/:driversId',isAuthenticated,async(request,response) =>{
+app.put('/drivers/:driverId',isAuthenticated,async(request,response) =>{
     const {driverId} = request.params
     const{name,licenseNumber,mobile} = request.body
 
@@ -250,7 +247,7 @@ app.put('/drivers/:driversId',isAuthenticated,async(request,response) =>{
 })
 
 app.delete('/drivers/:driverId',isAuthenticated,async(request,response) => {
-    const driverId = request.params 
+    const {driverId} = request.params 
     const deleteDriverQuery = `
     DELETE FROM
     drivers 
@@ -296,7 +293,9 @@ app.get('/trips', isAuthenticated, async (req, res) => {
       trips.amount,
       trips.advance,
       trips.expense,
+      drivers.id AS driver_id,
       drivers.name AS driver_name,
+      vehicles.id AS vehicle_id,
       vehicles.vehicle_number AS vehicle_number
     FROM trips
     LEFT JOIN drivers ON trips.driver_id = drivers.id
@@ -308,7 +307,9 @@ app.get('/trips', isAuthenticated, async (req, res) => {
     source: obj.source,
     destination: obj.destination,
     vendorName: obj.vendor_name,
+    driverId : obj.driver_id,
     driverName: obj.driver_name,
+    vehicleId : obj.vehicle_id,
     vehicleNumber: obj.vehicle_number,
     amount: obj.amount,
     advance: obj.advance,
@@ -359,3 +360,4 @@ app.delete('/trips/:tripId', isAuthenticated, async (req, res) => {
     res.status(500).send({ error: `Cannot Delete Trip ${tripId}` });
   }
 });
+
