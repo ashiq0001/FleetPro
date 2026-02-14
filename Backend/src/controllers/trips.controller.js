@@ -2,13 +2,13 @@ const { getDb } = require('../config/db');
 
 exports.addTrip = async (req, res) => {
   const db = getDb();
-  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense } = req.body;
+  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense,status } = req.body;
 
   try {
     await db.run(`
-      INSERT INTO trips (date, source, destination, vendor_name, driver_id, vehicle_id, amount, advance, expense)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense]);
+      INSERT INTO trips (date, source, destination, vendor_name, driver_id, vehicle_id, amount, advance, expense,status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+    `, [date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense,status]);
 
     res.status(200).send("Trip Added Successfully");
   } catch (err) {
@@ -37,6 +37,7 @@ exports.getTrips = async (req, res) => {
       driverName: t.driver_name,
       vehicleId: t.vehicle_id,
       vehicleNumber: t.vehicle_number,
+      paymentStatus: t.status,
       amount: t.amount,
       advance: t.advance,
       expense: t.expense,
@@ -52,13 +53,13 @@ exports.getTrips = async (req, res) => {
 exports.updateTrip = async (req, res) => {
   const db = getDb();
   const { tripId } = req.params;
-  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense } = req.body;
+  const { date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense ,status} = req.body;
 
   try {
     await db.run(`
-      UPDATE trips SET date=?, source=?, destination=?, vendor_name=?, driver_id=?, vehicle_id=?, amount=?, advance=?, expense=?
+      UPDATE trips SET date=?, source=?, destination=?, vendor_name=?, driver_id=?, vehicle_id=?, amount=?, advance=?, expense=?,status = ?
       WHERE id=?
-    `, [date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense, tripId]);
+    `, [date, source, destination, vendorName, driverId, vehicleId, amount, advance, expense, tripId,status]);
 
     res.status(200).send(`Trip ${tripId} Updated Successfully`);
   } catch (err) {
